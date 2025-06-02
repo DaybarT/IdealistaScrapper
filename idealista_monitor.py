@@ -6,9 +6,6 @@ from datetime import datetime
 import time
 import re
 from zoneinfo import ZoneInfo
-from dotenv import load_dotenv
-import os
-load_dotenv()
 
 
 webhook_url = "https://discord.com/api/webhooks/1379115840754028695/mX6rkpGsnNYStnIkjwEzR3PRK9sF9QYa7g9dmnb0qeKX_Brhi59Ili03oAF4lLUbwcIz"
@@ -124,17 +121,25 @@ zona_es = ZoneInfo("Europe/Madrid")
 
 while True:
     ahora = datetime.now(tz=zona_es)
-    hora_actual = ahora.hour
+    hora = ahora.hour
+    minuto = ahora.minute
 
     print(f"🕒 [{ahora.strftime('%Y-%m-%d %H:%M:%S')}] Verificando si debe ejecutarse...")
 
-    if 7 <= hora_actual < 22:
+    # Convertimos hora y minutos a formato decimal (ej: 13:30 → 13.5)
+    hora_decimal = hora + minuto / 60
+
+    # Condiciones de ejecución permitidas
+    if (
+        (10.5 <= hora_decimal < 13.5) or  # 10:30 a 13:30
+        (16.5 <= hora_decimal < 20.5)     # 16:30 a 20:30
+    ):
         print(f"✅ Ejecutando scrape a las {ahora.strftime('%H:%M')}")
         try:
-            scrape(URL)
+            scrape(URL)  # Llama a tu función scrape aquí
         except Exception as e:
             print(f"❌ Error durante scrape: {e}")
     else:
-        print(f"⏸ Fuera de horario (07:00–22:00). No se ejecuta scrape.")
+        print(f"⏸ Fuera de horario. No se ejecuta scrape.")
 
-    time.sleep(1800)  # Espera 30 minutos
+    time.sleep(1800)
