@@ -137,4 +137,4 @@ while True:
     else:
         print(f"⏸ Fuera de horario (07:00–22:00). No se ejecuta scrape.")
 
-    time.sleep(intervalo)  # Espera 30 minutos
+    time.sleep(1800)  # Espera 30 minutos
