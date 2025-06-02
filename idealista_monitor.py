@@ -30,6 +30,7 @@ memoryData = set()
 
 def scrape(url: str):
     response = requests.get(url, headers=HEADERS)
+    print(response)
     content = BeautifulSoup(response.text, "html.parser")
     main = content.find('main', attrs={'id': 'main-content'})
     sectionItems = main.find('section', attrs={'class': 'items-container items-list'})
