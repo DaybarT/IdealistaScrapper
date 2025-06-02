@@ -1,9 +1,9 @@
-# fly.toml app configuration file generated for idealistascrapper on 2025-06-02T17:19:20Z
+# fly.toml app configuration file generated for idealistascrapper-my2-9w on 2025-06-02T17:30:47Z
 #
 # See https://fly.io/docs/reference/configuration/ for information about how to use this file.
 #
 
-app = 'idealistascrapper'
+app = 'idealistascrapper-my2-9w'
 primary_region = 'cdg'
 
 [build]
