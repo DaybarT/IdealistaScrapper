@@ -8,8 +8,7 @@ import re
 from zoneinfo import ZoneInfo
 
 
-webhook_url = "https://discord.com/api/webhooks/1379115840754028695/mX6rkpGsnNYStnIkjwEzR3PRK9sF9QYa7g9dmnb0qeKX_Brhi59Ili03oAF4lLUbwcIz"
-intervalo = 1800
+
 
 URL = "https://www.idealista.com/venta-viviendas/alovera-guadalajara/?ordenado-por=fecha-publicacion-desc"
 HEADERS = {
