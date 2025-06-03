@@ -5,6 +5,7 @@ from datetime import datetime
 import time
 import re
 from zoneinfo import ZoneInfo
+import random
 
 from dotenv import load_dotenv
 
@@ -48,6 +49,17 @@ signal.signal(signal.SIGTERM, signal_handler)
 
 # El resto de tu función `scrape` permanece igual...
 
+def get_random_proxy():
+    if os.path.exists("proxies.txt"):
+        with open("proxies.txt", "r") as f:
+            proxies = [line.strip() for line in f if line.strip()]
+        if proxies:
+            proxy = random.choice(proxies)
+            return {
+                "http": proxy,
+                "https": proxy
+            }
+    return None
 
 URL = "https://www.idealista.com/venta-viviendas/alovera-guadalajara/con-publicado_ultima-semana/?ordenado-por=fecha-publicacion-desc"
 HEADERS = {
@@ -62,7 +74,10 @@ HEADERS = {
 
 
 def scrape(url: str):
-    response = requests.get(url, headers=HEADERS)
+    proxy = get_random_proxy()
+    if proxy:
+        print(f"🛡 Usando proxy: {proxy['http']}")
+    response = requests.get(url, headers=HEADERS, proxies=proxy or {})
     print(response)
     content = BeautifulSoup(response.text, "html.parser")
     main = content.find('main', attrs={'id': 'main-content'})
