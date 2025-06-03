@@ -22,6 +22,7 @@ intervalo = int(os.getenv("intervalo"))
 
 MEMORY_FILE = 'memory.txt'
 memoryData = set()
+user_input = ''
 
 # Cargar memoria al iniciar
 if os.path.exists(MEMORY_FILE):
@@ -56,9 +57,15 @@ def load_proxies():
     return []
 
 def get_response_with_proxy_rotation(url):
+    global user_input
     proxies_list = load_proxies()
     if not proxies_list:
-        raise RuntimeError("🚫 No hay proxies disponibles en proxies.txt")
+        user_input = input("🚫 No hay proxies disponibles en proxies.txt. ¿Runear sin proxies? (Y/N): ").strip().lower()
+        if user_input == 'y':
+            return try_without_proxy(url)
+        else:
+            print("⛔ Ejecución abortada por el usuario.")
+            return None
 
     random.shuffle(proxies_list)  # Aleatoriza el orden
     tried = []
@@ -70,13 +77,29 @@ def get_response_with_proxy_rotation(url):
             response = requests.get(url, headers=HEADERS, proxies=proxy, timeout=10)
             response.raise_for_status()
             print("✅ Proxy funcionó")
-            return response  # ¡Éxito!
+            return response
         except requests.exceptions.RequestException as e:
             print(f"❌ Proxy falló: {e}")
             tried.append(proxy_url)
             continue
 
-    sys.exit("Todos los proxies fallaron. Abortando ejecución.")
+    user_input = input("⚠️ Todos los proxies fallaron. ¿Runear sin proxies? (Y/N): ").strip().lower()
+    if user_input == 'y':
+        return try_without_proxy(url)
+    else:
+        print("⛔ Ejecución abortada por el usuario.")
+        return None
+
+def try_without_proxy(url):
+    print("🔄 Probando sin proxy...")
+    try:
+        response = requests.get(url, headers=HEADERS, timeout=10)
+        response.raise_for_status()
+        print("✅ Petición sin proxy funcionó")
+        return response
+    except requests.exceptions.RequestException as e:
+        print(f"❌ Fallo sin proxy también: {e}")
+        return None
 
 URL = "https://www.idealista.com/venta-viviendas/alovera-guadalajara/con-publicado_ultima-semana/?ordenado-por=fecha-publicacion-desc"
 HEADERS = {
