@@ -1,4 +1,3 @@
-
 from bs4 import BeautifulSoup
 import requests
 import json
@@ -7,10 +6,50 @@ import time
 import re
 from zoneinfo import ZoneInfo
 
+from dotenv import load_dotenv
+
+import atexit
+import os
+import signal
+import sys
+
+load_dotenv()
 
 
+webhook_url = os.getenv("webhook_url")
+intervalo = int(os.getenv("intervalo"))
 
-URL = "https://www.idealista.com/venta-viviendas/alovera-guadalajara/?ordenado-por=fecha-publicacion-desc"
+MEMORY_FILE = 'memory.txt'
+memoryData = set()
+
+# Cargar memoria al iniciar
+if os.path.exists(MEMORY_FILE):
+    with open(MEMORY_FILE, 'r') as f:
+        memoryData = set(line.strip() for line in f if line.strip())
+
+# Función para guardar memoria
+def save_memory():
+    with open(MEMORY_FILE, 'w') as f:
+        for item in memoryData:
+            f.write(f"{item}\n")
+    print(f"[INFO] Memoria guardada con {len(memoryData)} elementos.")
+
+# Registrar para guardar al salir
+atexit.register(save_memory)
+
+# También guardar si se interrumpe con Ctrl+C o kill
+def signal_handler(sig, frame):
+    print("\n[INFO] Interrupción detectada, guardando memoria...")
+    save_memory()
+    sys.exit(0)
+
+signal.signal(signal.SIGINT, signal_handler)
+signal.signal(signal.SIGTERM, signal_handler)
+
+# El resto de tu función `scrape` permanece igual...
+
+
+URL = "https://www.idealista.com/venta-viviendas/alovera-guadalajara/con-publicado_ultima-semana/?ordenado-por=fecha-publicacion-desc"
 HEADERS = {
     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 '
                   '(KHTML, like Gecko) Chrome/90.0.4430.93 Safari/537.36',
@@ -21,8 +60,6 @@ HEADERS = {
     'Upgrade-Insecure-Requests': '1'
 }
 
-# MEMORIA GLOBAL para evitar duplicados
-memoryData = set()
 
 def scrape(url: str):
     response = requests.get(url, headers=HEADERS)
@@ -43,14 +80,15 @@ def scrape(url: str):
         if not info_container:
             continue
 
-        # TITULO Y LINK
-        title_tag = info_container.select_one('a[title]')
-        titulo = title_tag['title'] if title_tag else None
-        link = title_tag['href'] if title_tag else None
+        # Buscar el <a> con role='heading'
+        title_tag = info_container.select_one('a[role="heading"]')
+
+        # Extraer title y href
+        titulo = title_tag['title'] if title_tag and 'title' in title_tag.attrs else None
+        link = title_tag['href'] if title_tag and 'href' in title_tag.attrs else None
         full_link = 'https://www.idealista.com' + link if link else None
 
-
-        # EXTRAER SOLO NÚMERO DE IDENTIFICADOR
+        # Extraer identificador del href
         match = re.search(r'/inmueble/(\d+)/', link or '')
         identificador = match.group(1) if match else None
 
