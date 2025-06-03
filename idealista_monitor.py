@@ -49,17 +49,34 @@ signal.signal(signal.SIGTERM, signal_handler)
 
 # El resto de tu función `scrape` permanece igual...
 
-def get_random_proxy():
+def load_proxies():
     if os.path.exists("proxies.txt"):
         with open("proxies.txt", "r") as f:
-            proxies = [line.strip() for line in f if line.strip()]
-        if proxies:
-            proxy = random.choice(proxies)
-            return {
-                "http": proxy,
-                "https": proxy
-            }
-    return None
+            return [p.strip() for p in f if p.strip()]
+    return []
+
+def get_response_with_proxy_rotation(url):
+    proxies_list = load_proxies()
+    if not proxies_list:
+        raise RuntimeError("🚫 No hay proxies disponibles en proxies.txt")
+
+    random.shuffle(proxies_list)  # Aleatoriza el orden
+    tried = []
+
+    for proxy_url in proxies_list:
+        proxy = {"http": proxy_url, "https": proxy_url}
+        print(f"🛡 Intentando con proxy: {proxy_url}")
+        try:
+            response = requests.get(url, headers=HEADERS, proxies=proxy, timeout=10)
+            response.raise_for_status()
+            print("✅ Proxy funcionó")
+            return response  # ¡Éxito!
+        except requests.exceptions.RequestException as e:
+            print(f"❌ Proxy falló: {e}")
+            tried.append(proxy_url)
+            continue
+
+    sys.exit("Todos los proxies fallaron. Abortando ejecución.")
 
 URL = "https://www.idealista.com/venta-viviendas/alovera-guadalajara/con-publicado_ultima-semana/?ordenado-por=fecha-publicacion-desc"
 HEADERS = {
@@ -74,10 +91,9 @@ HEADERS = {
 
 
 def scrape(url: str):
-    proxy = get_random_proxy()
-    if proxy:
-        print(f"🛡 Usando proxy: {proxy['http']}")
-    response = requests.get(url, headers=HEADERS, proxies=proxy or {})
+    response = get_response_with_proxy_rotation(URL)
+    if response:
+        print(f"🔎 Longitud del contenido recibido: {len(response.text)}")
     print(response)
     content = BeautifulSoup(response.text, "html.parser")
     main = content.find('main', attrs={'id': 'main-content'})
